@@ -18,18 +18,20 @@ def add_transaction(portfolio_name, position_id, stock, exp_month, exp_day, exp_
     transaction['trade_date'] = transaction['trade_date'].astype(int)
 
     transaction['debit/credit'] = transaction['shares'] * transaction['price'] * -1
-    transaction['td_option_symbol'] = transaction['stock'] + '_' + transaction['exp_month'] + transaction['exp_day'] + transaction['exp_year'] + transaction['put_call'] + transaction['strike']
+    transaction['td_option_symbol'] = (transaction['stock'] + '_' + transaction['exp_month'] + transaction['exp_day'] + transaction['exp_year'] + transaction['put_call'] + transaction['strike']).astype(str)
+    td_option_symbol = transaction['td_option_symbol'][0]
     transaction['exp_date'] = transaction['exp_year'] + transaction['exp_month'] + transaction['exp_day']
 
     def contains_number(value):
-        has_number = 'F'
+        has_number = False
         for character in value:
             if character.isdigit():
-                has_number = 'T'
+                has_number = True
+            else:
+                has_number = has_number
         return has_number
 
-    transaction['is_option'] = contains_number(transaction['td_option_symbol'])
-    transaction['security_open'] = ''
+    transaction['is_option'] = contains_number(td_option_symbol)
 
     # check if portfolio exists, if not, make a directory for it
     if not os.path.isdir(portfolio_name):

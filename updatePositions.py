@@ -40,7 +40,7 @@ def update_positions(portfolio_name):
 
             if current_shares == 0:  # if security closed
                 unrealized_transactions = 0
-                transaction_summary['is_open'] = np.where(transaction_summary['td_option_symbol'] == security, 'F', transaction_summary['is_open'])
+                transaction_summary['is_open'] = np.where(transaction_summary['td_option_symbol'] == security, False, transaction_summary['is_open'])
                 transaction_summary['current_value'] = np.where(transaction_summary['td_option_symbol'] == security,
                                                                 np.NAN,
                                                                 transaction_summary['current_value'])
@@ -51,7 +51,7 @@ def update_positions(portfolio_name):
                                                                 current_price, transaction_summary['current_price'])
                 unrealized_transactions = current_shares * current_price  # get market value of open position
                 security_open = True
-                transaction_summary['is_open'] = np.where(transaction_summary['td_option_symbol'] == security, 'T', transaction_summary['is_open'])
+                transaction_summary['is_open'] = np.where(transaction_summary['td_option_symbol'] == security, True, transaction_summary['is_open'])
                 transaction_summary['current_value'] = np.where(transaction_summary['td_option_symbol'] == security, unrealized_transactions,
                                                           transaction_summary['current_value'])
 
@@ -62,28 +62,42 @@ def update_positions(portfolio_name):
         position_id = transaction_summary['position_id'][0]
         print(position_id)
         stock = transaction_summary['stock'][0]
-        print(stock)
         shares = abs(transaction_summary['shares'][0])
-        print(shares)
         position_open = security_open
-        print(position_open)
+        if security_open:
+            position_open = True
+        else:
+            position_open = False
         current_stock_price = get_price(stock, 'stock')
         current_expiration = transaction_summary['exp_date'].max()
+        current_strike = transaction_summary[transaction_summary['exp_date'] == current_expiration].reset_index()['strike'][0]
+        current_option = transaction_summary[transaction_summary['exp_date'] == current_expiration].reset_index()['put_call'][0]
 
         transaction_summary['call_open'] = np.where(
-            transaction_summary['put_call'] == 'C', np.where(transaction_summary['is_open'] == 'T', 'T', 'F'), 'F')
+            transaction_summary['put_call'] == 'C', np.where(transaction_summary['is_open'], True, False), False)
 
-        if position_open and 'F' in transaction_summary['is_option'].values and 'T' not in transaction_summary['call_open'].values:  # if position is open, stock was bought, and no calls are open
-            needs_call = 'Yes'
-
-        else:
-            needs_call = 'No'
-
-        if 'P' in transaction_summary['put_call']:
-            position_type = 'cash_secured_put'
+        if position_open and False in transaction_summary['is_option'].values and True not in transaction_summary['call_open'].values:  # if position is open, stock was bought, and no calls are open
+            needs_call = True
 
         else:
-            position_type = 'buy_write'
+            needs_call = False
+
+        if 'P' in list(transaction_summary['put_call']):
+            position_type = 'CSP'
+
+        else:
+            position_type = 'BW'
+
+        if current_option == 'C':
+            if current_stock_price >= current_strike:
+                itm = True
+            else:
+                itm = False
+        else:
+            if current_stock_price <= current_strike:
+                itm = True
+            else:
+                itm = False
 
         transaction_summary.to_csv('./' + portfolio_name + '/' + position + 'transactions.csv')
 
@@ -91,13 +105,11 @@ def update_positions(portfolio_name):
         sector_info = sectors[sectors['Ticker'] == stock].reset_index()
         name = sector_info['Company Name'][0]
         sector = sector_info['Sector'][0]
-        print(sector)
         industry = sector_info['Industry'][0]
-        print(industry)
         profit_loss = sum(list_security_values)  # current market value of position
 
-        stock_summary = transaction_summary[transaction_summary['is_option'] == 'F'].reset_index(drop=True)  # all stocks in position
-        option_summary = transaction_summary[transaction_summary['is_option'] == 'T'].reset_index(drop=True)  # all options in position
+        stock_summary = transaction_summary[transaction_summary['is_option'] == False].reset_index(drop=True)  # all stocks in position
+        option_summary = transaction_summary[transaction_summary['is_option'] == True].reset_index(drop=True)  # all options in position
         put_summary = option_summary[option_summary['put_call'] == 'P'].reset_index(drop=True)  # all puts in position
         buy_stock = stock_summary[stock_summary['trade_date'] == stock_summary['trade_date'].min()].reset_index(drop=True)  # first buy of stock
         first_option = option_summary[option_summary['trade_date'] == option_summary['trade_date'].min()].reset_index(drop=True) # first option trade
@@ -111,11 +123,9 @@ def update_positions(portfolio_name):
             cost_basis = first_option['strike'][0] - option_summary['price'].sum()
             purchase_price = first_option['strike'][0]
             risk = (first_option['strike'][0] - first_option['price'][0]) * shares
-        print(risk)
 
         current_value = risk + profit_loss
         ror = profit_loss / risk
-        print(ror)
 
         def days_to_exp(start_date, end_date):
             np.busday_count(start_date,
@@ -152,9 +162,9 @@ def update_positions(portfolio_name):
 
 
         position = pd.DataFrame(
-            {'portfolio_name': [portfolio_name], 'position_id': [position_id], 'stock': [stock], 'name': [name], 'position_type': [position_type], 'shares': [shares], 'position_open': [position_open], 'currrent_stock_price': [current_stock_price],
+            {'portfolio_name': [portfolio_name], 'position_id': [position_id], 'stock': [stock], 'name': [name], 'position_type': [position_type], 'shares': [shares], 'position_open': [position_open], 'current_stock_price': [current_stock_price],
              'cost_basis': [cost_basis], 'purchase_price': [purchase_price], 'sector': [sector], 'industry': [industry], 'risk': [risk], 'current_value': [current_value],
-             'profit_loss': [profit_loss], 'ROR': [ror], 'IRR': ['irr'], 'needs_call': [needs_call], 'current_expiration': [current_expiration]})
+             'profit_loss': [profit_loss], 'ROR': [ror], 'IRR': ['irr'], 'needs_call': [needs_call], 'current_expiration': [current_expiration], 'current_strike': [current_strike], 'current_option': [current_option], 'itm': [itm]})
 
         list_position_values.append(current_value)
 
