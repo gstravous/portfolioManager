@@ -38,9 +38,9 @@ def add_transaction(portfolio_name, position_id, stock, exp_month, exp_day, exp_
         os.makedirs(portfolio_name)
 
     # check if file exists, if yes, add transaction to that file, if not, make it with first entry as this transaction
-    file = './' + portfolio_name + '/transaction_summary.csv'
+    file = './' + portfolio_name + '/transaction_summary_' + portfolio_name + '.csv'
     if os.path.exists(file):
         pd.read_csv(file).append(transaction).to_csv(file, index=False)
 
     else:
-        transaction.to_csv(file, index=False)
+        transaction.to_csv(file, index=False,)

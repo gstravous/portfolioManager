@@ -2,24 +2,36 @@ import pandas as pd
 from getPrice import get_price
 import numpy as np
 import warnings
+import os
 warnings.filterwarnings("ignore")
 
-def update_positions(portfolio_name):
-    transactions = pd.read_csv('./' + portfolio_name + '/transaction_summary.csv')
+
+def update_positions(portfolio_name, cash):
+    transactions = pd.read_csv('./' + portfolio_name + '/transaction_summary_' + portfolio_name + '.csv')
+
+    if not os.path.exists('./' + portfolio_name + '/position_summary.csv'):  # check if position summary exists, if not, make it
+        new_position_summary = pd.DataFrame(
+            {'portfolio_name': [], 'position_id': [], 'stock': [], 'shares': [],
+             'position_open': [],
+             'cost_basis': [], 'purchase_price': [], 'sector': [], 'industry': [],
+             'risk': [], 'current_value': [],
+             'profit_loss': [], 'ROR': [], 'IRR': []})
+
+        new_position_summary.to_csv('./' + portfolio_name + '/position_summary.csv')
+
+    position_summary_old = pd.read_csv('./' + portfolio_name + '/position_summary.csv')
+    closed_positions = position_summary_old[position_summary_old['position_open'] == False]['position_id'].unique()  # list of positions considered closed before current update
+    transaction_positions = transactions['position_id'].unique().tolist()  # list of all positions ever traded in portfolio
+    if len(closed_positions) > 0:  # if at least one position is closed
+        for position in closed_positions:  # remove closed positions
+            transaction_positions.remove(position)
+
+    position_summary = position_summary_old[position_summary_old['position_open'] == False]  # dataframe of positions considered closed before current update
 
     sectors = pd.read_csv('./sectors.csv')
 
-    positions = transactions['position_id'].unique()  # list of positions traded in portfolio
-
-    position_summary = pd.DataFrame(
-        {'portfolio_name': [], 'position_id': [], 'stock': [], 'shares': [],
-         'position_open': [],
-         'cost_basis': [], 'purchase_price': [], 'sector': [], 'industry': [],
-         'risk': [], 'current_value': [],
-         'profit_loss': [], 'ROR': [], 'IRR': []})
-
-    list_position_values = []  # list of current values of all positions
-    for position in positions:
+    list_position_values = []  # list of current values of all OPEN positions
+    for position in transaction_positions:
         transaction_summary = transactions[transactions['position_id'] == position].reset_index(drop=True)  # dataframe for each position
         transaction_summary['is_open'] = ''
         transaction_summary['current_value'] = np.NAN
@@ -63,15 +75,22 @@ def update_positions(portfolio_name):
         print(position_id)
         stock = transaction_summary['stock'][0]
         shares = abs(transaction_summary['shares'][0])
-        position_open = security_open
+
         if security_open:
             position_open = True
         else:
             position_open = False
+
         current_stock_price = get_price(stock, 'stock')
         current_expiration = transaction_summary['exp_date'].max()
-        current_strike = transaction_summary[transaction_summary['exp_date'] == current_expiration].reset_index()['strike'][0]
-        current_option = transaction_summary[transaction_summary['exp_date'] == current_expiration].reset_index()['put_call'][0]
+
+        try:
+            current_strike = transaction_summary[transaction_summary['exp_date'] == current_expiration].reset_index()['strike'][0]
+            current_option = transaction_summary[transaction_summary['exp_date'] == current_expiration].reset_index()['put_call'][0]
+
+        except:
+            current_strike = np.NAN
+            current_option = np.NAN
 
         transaction_summary['call_open'] = np.where(
             transaction_summary['put_call'] == 'C', np.where(transaction_summary['is_open'], True, False), False)
@@ -88,16 +107,19 @@ def update_positions(portfolio_name):
         else:
             position_type = 'BW'
 
-        if current_option == 'C':
+        if (current_option == 'C') & position_open:
             if current_stock_price >= current_strike:
                 itm = True
             else:
                 itm = False
-        else:
+        elif (current_option == 'P') & position_open:
             if current_stock_price <= current_strike:
                 itm = True
             else:
                 itm = False
+
+        else:
+            itm = np.NAN
 
         transaction_summary.to_csv('./' + portfolio_name + '/' + position + 'transactions.csv')
 
@@ -117,14 +139,24 @@ def update_positions(portfolio_name):
         if put_summary.empty:  # if buy write
             cost_basis = buy_stock['price'][0] - option_summary['price'].sum()
             purchase_price = buy_stock['price'][0]
-            risk = (buy_stock['debit/credit'][0] + first_option['debit/credit'][0]) * -1
+            try:
+                risk = (buy_stock['debit/credit'][0] + first_option['debit/credit'][0]) * -1
+
+            except:
+                risk = buy_stock['debit/credit'][0] * -1
 
         else:  # if put
             cost_basis = first_option['strike'][0] - option_summary['price'].sum()
             purchase_price = first_option['strike'][0]
             risk = (first_option['strike'][0] - first_option['price'][0]) * shares
 
-        current_value = risk + profit_loss
+        #current_value = risk + profit_loss
+        current_value = transaction_summary['current_value'].sum()
+
+        if (current_option == 'P') & position_open:
+            current_value = current_value + (shares * current_strike)
+            cash = cash - (shares * current_strike)
+
         ror = profit_loss / risk
 
         def days_to_exp(start_date, end_date):
@@ -166,7 +198,8 @@ def update_positions(portfolio_name):
              'cost_basis': [cost_basis], 'purchase_price': [purchase_price], 'sector': [sector], 'industry': [industry], 'risk': [risk], 'current_value': [current_value],
              'profit_loss': [profit_loss], 'ROR': [ror], 'IRR': ['irr'], 'needs_call': [needs_call], 'current_expiration': [current_expiration], 'current_strike': [current_strike], 'current_option': [current_option], 'itm': [itm]})
 
-        list_position_values.append(current_value)
+        if position_open:
+            list_position_values.append(current_value)
 
         print(list_position_values)
 
@@ -175,13 +208,37 @@ def update_positions(portfolio_name):
         position.to_csv('./' + portfolio_name + '/' + position_id + 'position_summary.csv')
         position_summary.to_csv('./' + portfolio_name + '/position_summary.csv')
 
-    pd.DataFrame(position_summary['sector'].unique()).to_csv('./' + portfolio_name + 'sector_allocation.csv')
-
     position_summary.to_csv('./' + portfolio_name + '/position_summary.csv')
 
-    portfolio_value = sum(list_position_values)
+    portfolio_value = sum(list_position_values) + cash
+
+    consumer_defensive = position_summary[position_summary['sector'] == 'Consumer Defensive']['current_value'].sum()
+    healthcare = position_summary[position_summary['sector'] == 'Healthcare']['current_value'].sum()
+    industrials = position_summary[position_summary['sector'] == 'Industrials']['current_value'].sum()
+    consumer_cyclical = position_summary[position_summary['sector'] == 'Consumer Cyclical']['current_value'].sum()
+    financial_services = position_summary[position_summary['sector'] == 'Financial Services']['current_value'].sum()
+    technology = position_summary[position_summary['sector'] == 'Technology']['current_value'].sum()
+    basic_materials = position_summary[position_summary['sector'] == 'Basic Materials']['current_value'].sum()
+    utilities = position_summary[position_summary['sector'] == 'Utilities']['current_value'].sum()
+    business_services = position_summary[position_summary['sector'] == 'Business Services']['current_value'].sum()
+    real_estate = position_summary[position_summary['sector'] == 'Real Estate']['current_value'].sum()
+    energy = position_summary[position_summary['sector'] == 'Energy']['current_value'].sum()
+
+    sector_allocation = pd.DataFrame({'sector': ['Consumer Defensive', 'Healthcare', 'Industrials', 'Consumer Cyclical', 'Financial Services', 'Technology', 'Basic Materials', 'Utilities', 'Business Services', 'Real Estate', 'Energy', 'CASH'], 'allocation': [consumer_defensive, healthcare, industrials, consumer_cyclical, financial_services, technology, basic_materials, utilities, business_services, real_estate, energy, cash]})
+
+    sector_allocation['percentage'] = sector_allocation['allocation'] / portfolio_value
+
+    sector_allocation['goal'] = [.2, .15, .05, .05, .05, .1, .05, .05, .05, .05, .05, .15]
+
+    sector_allocation['cash_goal'] = sector_allocation['goal'] * portfolio_value
+
+    sector_allocation['add_or_reduce'] = sector_allocation['cash_goal'] - sector_allocation['allocation']
+
+    sector_allocation.to_csv('./' + portfolio_name + '/sector_allocation.csv')
 
     return portfolio_value
 
 
-print(update_positions('CI'))
+#print(update_positions('CI', 12309.83))
+print(update_positions('MAIN', 122434.51))
+

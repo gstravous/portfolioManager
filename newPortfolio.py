@@ -16,3 +16,6 @@ def new_portfolio(portfolio_name, date_opened, starting_balance):
     # check if file exists, if yes, add transaction to that file, if not, make it with first entry as this transaction
     file = './' + portfolio_name + '/portfolio_summary.csv'
     portfolio.to_csv(file, index=False)
+
+
+new_portfolio('main', 130622, 400000)
