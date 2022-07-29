@@ -149,7 +149,7 @@ ALR,ALERE INC.,Healthcare,Medical Diagnostics & Research
 ALRM,"Alarm.com Holdings, Inc.",Technology,Application Software
 ALRN,AILERON THERAPEUTICS INC,Healthcare,Biotechnology
 ALSK,ALASKA COMMUNICATIONS SYSTEMS GROUP INC,Business Services,Communication Services
-ALSN,Allison Transmission Holdings Inc,Consumer Cyclical,Autos
+ALSN,Allison Transmission Holdings Inc,Industrials,Construction Machinery and Heavy Trucks
 ALT,"Altimmune, Inc.",Healthcare,Biotechnology
 ALTA,Altabancorp,Financial Services,Banks
 ALTM,Altus Midstream Co,Energy,Oil & Gas - Midstream
@@ -1007,7 +1007,7 @@ FARM,FARMER BROTHERS CO,Consumer Defensive,Consumer Packaged Goods
 FARO,FARO TECHNOLOGIES INC,Technology,Computer Hardware
 FAST,FASTENAL CO,Industrials,Industrial Distribution
 FB,"Meta Platforms, Inc.",Technology,Online Media
-FBHS,Fortune Brands Home & Security,Consumer Cyclical,Manufacturing - Apparel & Furniture
+FBHS,Fortune Brands Home & Security,Industrials,Building Products
 FBRX,"Forte Biosciences, Inc.",Healthcare,Biotechnology
 FC,FRANKLIN COVEY CO,Consumer Defensive,Education
 FCAUS,FCA US LLC,,
@@ -1967,7 +1967,7 @@ OLED,UNIVERSAL DISPLAY CORP \PA\,Technology,Semiconductors
 OLLI,"Ollie's Bargain Outlet Holdings, Inc.",Consumer Defensive,Retail - Defensive
 OLN,Olin Corp,Basic Materials,Chemicals
 OLP,ONE LIBERTY PROPERTIES INC,,
-OMC,OMNICOM GROUP INC.,Consumer Cyclical,Advertising & Marketing Services
+OMC,OMNICOM GROUP INC.,Business Services,Advertising
 OMCL,"OMNICELL, Inc",Technology,Application Software
 OMED,OncoMed Pharmaceuticals Inc,Healthcare,Biotechnology
 OMF,"OneMain Holdings, Inc.",Financial Services,Credit Services
@@ -2018,7 +2018,7 @@ PACB,"PACIFIC BIOSCIENCES OF CALIFORNIA, INC.",Healthcare,Medical Diagnostics & 
 PACW,PACWEST BANCORP,Financial Services,Banks
 PAHC,PHIBRO ANIMAL HEALTH CORP,Healthcare,Drug Manufacturers
 PANW,Palo Alto Networks Inc,Technology,Application Software
-PARA,Paramount Global,Communication Services,Broadcasting
+PARA,Paramount Global,Business Services,Broadcasting
 PATH,"UiPath, Inc.",Technology,Application Software
 PATK,PATRICK INDUSTRIES INC,Consumer Cyclical,Manufacturing - Apparel & Furniture
 PAYC,"Paycom Software, Inc.",Technology,Application Software
@@ -2485,6 +2485,7 @@ SPPI,SPECTRUM PHARMACEUTICALS INC,Healthcare,Biotechnology
 SPR,"Spirit AeroSystems Holdings, Inc.",Industrials,Aerospace & Defense
 SPRT,"Support.com, Inc.",Technology,Application Software
 SPT,"Sprout Social, Inc.",Business Services,Communication Services
+SPTN,SpartanNash Company,Consumer Defensive,Food Distributors
 SPWH,"SPORTSMAN'S WAREHOUSE HOLDINGS, INC.",Consumer Cyclical,Retail - Apparel & Specialty
 SPWR,SUNPOWER CORP,,
 SPXC,SPX CORP,Industrials,Industrial Products
@@ -2735,7 +2736,7 @@ UFI,UNIFI INC,Consumer Cyclical,Homebuilding & Construction
 UFPI,UFP INDUSTRIES INC,Industrials,Industrial Products
 UFS,Domtar CORP,Basic Materials,Forest Products
 UG,UNITED GUARDIAN INC,Consumer Defensive,Consumer Packaged Goods
-UGI,UGI CORP /PA/,Energy,Oil & Gas - Refining & Marketing
+UGI,UGI CORP /PA/,Utilities,Gas Utilities
 UHAL,Amerco,Industrials,Consulting & Outsourcing
 UHS,"Universal Health Services, Inc.",Healthcare,Health Care Providers
 UI,Ubiquiti Inc.,Technology,Communication Equipment

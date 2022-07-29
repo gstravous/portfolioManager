@@ -3,11 +3,16 @@ from getPrice import get_price
 import numpy as np
 import warnings
 import os
+import openpyxl
 warnings.filterwarnings("ignore")
 
 
 def update_positions(portfolio_name, cash):
+    spreadsheet = pd.ExcelWriter('./' + portfolio_name + '/' + portfolio_name + '_portfolio.xlsx')
+
     transactions = pd.read_csv('./' + portfolio_name + '/transaction_summary_' + portfolio_name + '.csv')
+
+    transactions.to_excel(spreadsheet, sheet_name='Transaction Summary', index=False)
 
     if not os.path.exists('./' + portfolio_name + '/position_summary.csv'):  # check if position summary exists, if not, make it
         new_position_summary = pd.DataFrame(
@@ -121,8 +126,6 @@ def update_positions(portfolio_name, cash):
         else:
             itm = np.NAN
 
-        transaction_summary.to_csv('./' + portfolio_name + '/' + position + 'transactions.csv')
-
         sectors = sectors.astype(str)
         sector_info = sectors[sectors['Ticker'] == stock].reset_index()
         name = sector_info['Company Name'][0]
@@ -205,10 +208,15 @@ def update_positions(portfolio_name, cash):
 
         position_summary = position_summary.append(position)
 
-        position.to_csv('./' + portfolio_name + '/' + position_id + 'position_summary.csv')
-        position_summary.to_csv('./' + portfolio_name + '/position_summary.csv')
+    position_summary = position_summary[['portfolio_name', 'position_id', 'stock', 'name', 'shares', 'position_open',
+                                         'current_stock_price', 'cost_basis', 'purchase_price', 'current_strike',
+                                         'current_option', 'current_expiration', 'sector', 'industry', 'risk',
+                                         'current_value', 'profit_loss', 'ROR', 'IRR', 'position_type', 'itm',
+                                         'needs_call']]
 
-    position_summary.to_csv('./' + portfolio_name + '/position_summary.csv')
+    position_summary.to_csv('./' + portfolio_name + '/position_summary.csv', index=False)
+
+    position_summary.to_excel(spreadsheet, sheet_name='Position Summary', index=False)
 
     portfolio_value = sum(list_position_values) + cash
 
@@ -228,17 +236,19 @@ def update_positions(portfolio_name, cash):
 
     sector_allocation['percentage'] = sector_allocation['allocation'] / portfolio_value
 
-    sector_allocation['goal'] = [.2, .15, .05, .05, .05, .1, .05, .05, .05, .05, .05, .15]
+    sector_allocation['goal'] = [.08333, .08333, .08333, .08333, .08333, .08333, .08333, .08333, .08333, .08333, .08333, .08333]
 
     sector_allocation['cash_goal'] = sector_allocation['goal'] * portfolio_value
 
     sector_allocation['add_or_reduce'] = sector_allocation['cash_goal'] - sector_allocation['allocation']
 
-    sector_allocation.to_csv('./' + portfolio_name + '/sector_allocation.csv')
+    sector_allocation.to_excel(spreadsheet, sheet_name='Sector Allocation', index=False)
+
+    spreadsheet.save()
 
     return portfolio_value
 
 
-#print(update_positions('CI', 12309.83))
-print(update_positions('MAIN', 122434.51))
+print(update_positions('CI', 12078.82))
+#print(update_positions('MAIN', 84284.09))
 
